@@ -33,7 +33,7 @@ MANAGER_PHONE = "+380670080788"
 
 # ВПИШИ СЮДА реальный юзернейм менеджера в Телеграме (без @).
 # Например, если у менеджера @ivan_sales — впиши "ivan_sales".
-MANAGER_TELEGRAM = "kirill_budmaterialy"
+MANAGER_TELEGRAM = "TopBudivelniMaterialy"
 
 # Приветствие (баннер-картинку добавим позже)
 WELCOME_TEXT = (
@@ -46,7 +46,7 @@ WELCOME_TEXT = (
     "• Склад №3 — пров. Деревообробний, 5 (Видубичі)\n"
     "• Склад №4 — вул. Бориспільська, 7\n\n"
     "🕘 <b>Графік роботи складів:</b>\n"
-    "Пн–Пт: 9:00–18:00 | Сб: 9:00–14:00 | Нд: вихідний\n\n"
+    "Пн–Пт: 8:00–18:00 | Сб: 9:00–14:00 | Нд: вихідний\n\n"
     "📞 <b>Прийом замовлень:</b> Пн–Нд, 9:00–21:00"
 )
 
@@ -54,14 +54,6 @@ WELCOME_TEXT = (
 # ДЕРЕВО КАТЕГОРИЙ.
 # --------------------------------------------------------------------------
 CATEGORIES = {
-    "facade": {
-        "title": "🏠 Все для фасаду / Фасадні роботи",
-        "subs": [
-            "Приклейка та армування",
-            "Вата та пінопласт",
-            "Ґрунт та декоративні матеріали",
-        ],
-    },
     "plaster": {
         "title": "🧱 Все для штукатурки / Штукатурні роботи",
         "subs": [
@@ -92,6 +84,14 @@ CATEGORIES = {
             "Стяжка",
             'Сітка кладочна "Армопояс"',
             "Розхідні матеріали",
+        ],
+    },
+    "facade": {
+        "title": "🏠 Все для фасаду / Фасадні роботи",
+        "subs": [
+            "Приклейка та армування",
+            "Вата та пінопласт",
+            "Ґрунт та декоративні матеріали",
         ],
     },
     "tools": {
@@ -140,6 +140,11 @@ DELIVERY_ZONES = {
 
 # Папка с картинками (лежит рядом с bot.py)
 IMAGES_DIR = "images"
+
+# Баннер приветствия. Файл должен лежать в папке images.
+# Если имя другое — поменяй здесь. Если баннера пока нет — оставь как есть,
+# бот просто пришлёт текст без картинки (не упадёт).
+WELCOME_BANNER = "banner.png"
 
 # ==========================================================================
 # КОД БОТА. Ниже менять ничего не нужно.
@@ -200,7 +205,17 @@ def contact_kb() -> InlineKeyboardMarkup:
 
 @dp.message(CommandStart())
 async def start(message: Message):
-    await message.answer(WELCOME_TEXT, reply_markup=main_menu_kb())
+    banner_path = os.path.join(IMAGES_DIR, WELCOME_BANNER)
+    if os.path.exists(banner_path):
+        # Баннер есть — шлём картинку, текст идёт подписью под ней
+        await message.answer_photo(
+            photo=FSInputFile(banner_path),
+            caption=WELCOME_TEXT,
+            reply_markup=main_menu_kb(),
+        )
+    else:
+        # Баннера нет — просто текст, бот не падает
+        await message.answer(WELCOME_TEXT, reply_markup=main_menu_kb())
 
 
 @dp.callback_query(F.data == "home")
