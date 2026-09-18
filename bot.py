@@ -218,13 +218,19 @@ async def start(message: Message):
         await message.answer(WELCOME_TEXT, reply_markup=main_menu_kb())
 
 
+async def show_screen(cb: CallbackQuery, text: str, keyboard: InlineKeyboardMarkup):
+    """Показать новый экран: убрать старое сообщение и прислать новое.
+    Работает всегда — и когда предыдущее было фото (баннер/тариф), и когда текст."""
+    try:
+        await cb.message.delete()
+    except Exception:
+        pass  # если удалить нельзя — не страшно, просто пришлём новое ниже
+    await cb.message.answer(text, reply_markup=keyboard)
+
+
 @dp.callback_query(F.data == "home")
 async def go_home(cb: CallbackQuery):
-    # На случай, если предыдущее сообщение было фото — edit_text упадёт, тогда шлём новое
-    try:
-        await cb.message.edit_text(WELCOME_TEXT, reply_markup=main_menu_kb())
-    except Exception:
-        await cb.message.answer(WELCOME_TEXT, reply_markup=main_menu_kb())
+    await show_screen(cb, WELCOME_TEXT, main_menu_kb())
     await cb.answer()
 
 
@@ -238,17 +244,11 @@ async def open_category(cb: CallbackQuery):
 
     # Раздел «Доставка» — показываем под-меню направлений
     if code == "delivery":
-        await cb.message.edit_text(
-            "🚚 <b>Тарифи на доставку</b>\n\nОберіть напрямок:",
-            reply_markup=delivery_kb(),
-        )
+        await show_screen(cb, "🚚 <b>Тарифи на доставку</b>\n\nОберіть напрямок:", delivery_kb())
         await cb.answer()
         return
 
-    await cb.message.edit_text(
-        f"{cat['title']}\n\nОберіть напрямок:",
-        reply_markup=subs_kb(code),
-    )
+    await show_screen(cb, f"{cat['title']}\n\nОберіть напрямок:", subs_kb(code))
     await cb.answer()
 
 
@@ -263,6 +263,11 @@ async def show_zone(cb: CallbackQuery):
 
     path = os.path.join(IMAGES_DIR, zone["file"])
     caption = f"🚚 <b>Тарифи: {zone['title']}</b>"
+
+    try:
+        await cb.message.delete()
+    except Exception:
+        pass
 
     if os.path.exists(path):
         photo = FSInputFile(path)
@@ -289,7 +294,7 @@ async def open_sub(cb: CallbackQuery):
         f"Ви обрали:\n<b>{sub_name}</b>\n\n"
         "Зв'яжіться з менеджером — підкажемо наявність, ціну та оформимо замовлення:"
     )
-    await cb.message.edit_text(text, reply_markup=contact_kb())
+    await show_screen(cb, text, contact_kb())
     await cb.answer()
 
 
